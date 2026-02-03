@@ -20,22 +20,22 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation; /* Improved touch handling */
+            touch-action: manipulation;
         }
 
-        /* Start Overlay */
+        /* 1. START OVERLAY (Required for iPhone Audio) */
         #start-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(9, 10, 15, 0.95);
-            z-index: 300;
+            background: rgba(9, 10, 15, 0.98);
+            z-index: 999;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             cursor: pointer;
         }
-        .heart-beat { font-size: 3rem; animation: beat 1s infinite; }
+        .heart-beat { font-size: 4rem; animation: beat 1s infinite; margin-bottom: 20px;}
         @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
         /* Stars */
@@ -56,14 +56,16 @@
             z-index: 10;
             width: 90%;
             max-width: 600px;
+            transition: opacity 0.5s;
         }
 
         h1 {
             font-family: 'Great Vibes', cursive;
-            font-size: 3rem;
+            font-size: 2.8rem;
             text-shadow: 0 0 10px #ff69b4;
             margin: 10px 0 20px 0;
             color: #fff0f5;
+            padding: 0 10px;
         }
 
         .video-frame {
@@ -74,14 +76,14 @@
             background: #000;
             margin: 0 auto 20px auto;
             width: 100%;
-            aspect-ratio: 16/9;
+            aspect-ratio: 16/9; /* Forces correct shape */
             position: relative;
         }
 
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* Ensures no black bars */
             display: block;
         }
 
@@ -91,12 +93,12 @@
             justify-content: center;
             align-items: center;
             width: 100%;
-            margin-top: 10px;
-            transition: opacity 0.5s ease; /* Smooth fade out */
+            margin-top: 20px;
+            transition: opacity 0.3s;
         }
 
         button {
-            padding: 12px 30px;
+            padding: 15px 40px;
             font-size: 1.2rem;
             border: none;
             border-radius: 50px;
@@ -105,8 +107,6 @@
             font-weight: 600;
             transition: all 0.3s ease;
             -webkit-tap-highlight-color: transparent;
-            z-index: 20;
-            display: inline-block;
         }
 
         #yesBtn {
@@ -129,8 +129,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.95);
-            z-index: 400;
+            background: rgba(0,0,0,1); /* Solid black background */
+            z-index: 500;
         }
 
         .success-text {
@@ -138,6 +138,7 @@
             font-size: 4rem;
             color: #ffd700;
             animation: pop 1s ease forwards;
+            text-align: center;
         }
         @keyframes pop {
             0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); }
@@ -148,17 +149,20 @@
 
     <div id="start-overlay">
         <div class="heart-beat">❤️</div>
-        <h2 style="color:white; font-family: 'Poppins'; font-weight: 300; margin-top:20px;">Tap to Open</h2>
+        <h2 style="color:white; font-family: 'Poppins'; font-weight: 300; text-align:center; padding: 0 20px;">
+            Tap anywhere to open<br>
+            <span style="font-size: 0.8rem; opacity: 0.7">(Sound on 🔊)</span>
+        </h2>
     </div>
 
     <div class="stars"></div>
 
     <div class="container" id="question-screen">
         <div class="video-frame">
-            <video id="trampVideo" src="lady_tramp.mp4" muted playsinline webkit-playsinline></video>
+            <video id="trampVideo" src="lady_tramp.mp4" playsinline webkit-playsinline></video>
         </div>
 
-        <h1 id="mainTitle">Would you be my valentine Wegy?</h1>
+        <h1>Would you be my valentine Wegy?</h1>
 
         <div class="buttons" id="btnContainer">
             <button id="yesBtn">Yes</button>
@@ -178,71 +182,80 @@
         const yesBtn = document.getElementById('yesBtn');
         const noBtn = document.getElementById('noBtn');
         const btnContainer = document.getElementById('btnContainer');
-        const mainTitle = document.getElementById('mainTitle');
         const startOverlay = document.getElementById('start-overlay');
         const questionScreen = document.getElementById('question-screen');
         const successScreen = document.getElementById('success-screen');
         const aladdinVideo = document.getElementById('aladdinVideo');
 
-        // 1. INITIALIZE VIDEOS
-        // We pause Tramp at 0:00 initially
-        trampVideo.pause();
-        trampVideo.currentTime = 0;
-
-        // 2. TAP TO START
+        // --- STEP 1: WAKE UP VIDEOS (Mobile Fix) ---
         startOverlay.addEventListener('click', () => {
+            // We play and immediately pause both videos.
+            // This "tricks" the iPhone into thinking the user has interacted with them.
+            trampVideo.play().then(() => {
+                trampVideo.pause();
+                trampVideo.currentTime = 0;
+            }).catch(() => console.log("Video auto-block handled"));
+
+            aladdinVideo.load();
+            
+            // Remove overlay
             startOverlay.style.opacity = '0';
             setTimeout(() => startOverlay.style.display = 'none', 500);
-            
-            // "Warm up" the videos so they play instantly later
-            trampVideo.play().then(() => trampVideo.pause());
-            aladdinVideo.load();
         });
 
-        // 3. SEQUENCE FUNCTION
-        function playSequence() {
-            // A. Hide Buttons immediately so she can't click again
+        // --- STEP 2: THE SEQUENCE LOGIC ---
+        function startLoveSequence() {
+            // A. Hide the buttons so she just watches
             btnContainer.style.opacity = '0';
-            btnContainer.style.pointerEvents = 'none'; // Disable clicks
-            
-            // B. Change text to build anticipation (Optional cute touch)
-            mainTitle.innerText = "Watch closely... ❤️";
+            btnContainer.style.pointerEvents = 'none';
 
-            // C. Play Lady and the Tramp
-            trampVideo.currentTime = 0;
-            trampVideo.muted = false; // Unmute if the video has sound
-            trampVideo.play();
+            // B. Play Lady and the Tramp
+            trampVideo.muted = false; // Try sound
+            trampVideo.play().catch(() => {
+                // If sound is blocked, play muted as fallback
+                trampVideo.muted = true;
+                trampVideo.play();
+            });
 
-            // D. When Tramp video finishes (approx 5-6 seconds)
-            // We listen for the 'ended' event, OR we force it after 5.5 seconds
-            // The safest way is a timeout slightly longer than the clip
+            // C. Listen for when the video ENDS
+            trampVideo.onended = function() {
+                goToSuccessPage();
+            };
             
+            // D. Fallback: If video loops or gets stuck, force switch after 6 seconds
             setTimeout(() => {
-                // E. Switch Screens
-                questionScreen.style.display = 'none';
-                successScreen.style.display = 'flex';
-                
-                // F. Play Aladdin
-                aladdinVideo.currentTime = 0;
-                aladdinVideo.muted = false;
-                aladdinVideo.play();
-            }, 5500); // 5500 ms = 5.5 seconds. Adjust this if your clip is shorter/longer!
+                if (questionScreen.style.display !== 'none') {
+                    goToSuccessPage();
+                }
+            }, 6500);
         }
 
-        // 4. BUTTON LISTENERS
-        yesBtn.addEventListener('click', playSequence);
+        function goToSuccessPage() {
+            questionScreen.style.display = 'none';
+            successScreen.style.display = 'flex';
+            
+            aladdinVideo.currentTime = 0;
+            aladdinVideo.muted = false;
+            aladdinVideo.play().catch(() => {
+                aladdinVideo.muted = true;
+                aladdinVideo.play();
+            });
+        }
+
+        // --- STEP 3: BUTTON ACTIONS ---
+        yesBtn.addEventListener('click', startLoveSequence);
 
         noBtn.addEventListener('click', function() {
             if (this.innerText === "No") {
-                // Transform into Yes Button
+                // Turn into YES
                 this.innerText = "Yes";
                 this.style.background = "linear-gradient(45deg, #ff6b6b, #ff8e8e)";
                 this.style.color = "white";
                 this.style.boxShadow = "0 5px 15px rgba(255, 107, 107, 0.4)";
                 this.style.border = "none";
             } else {
-                // If clicked again (as Yes), run the sequence
-                playSequence();
+                // If pressed again, start sequence
+                startLoveSequence();
             }
         });
 
