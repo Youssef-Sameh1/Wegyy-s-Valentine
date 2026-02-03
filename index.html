@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>For Wegy ❤️</title>
     <style>
+        /* Import Disney Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;600&display=swap');
 
         body {
@@ -23,7 +24,7 @@
             touch-action: manipulation;
         }
 
-        /* 1. START OVERLAY (Required for iPhone Audio) */
+        /* --- START SCREEN OVERLAY --- */
         #start-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -34,11 +35,12 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: opacity 0.5s;
         }
         .heart-beat { font-size: 4rem; animation: beat 1s infinite; margin-bottom: 20px;}
         @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
 
-        /* Stars */
+        /* Stars Background */
         .stars {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -50,6 +52,7 @@
                 40vw 80vh 1px white, 60vw 10vh 2px white;
         }
 
+        /* --- MAIN LAYOUT --- */
         .container {
             text-align: center;
             position: relative;
@@ -76,14 +79,14 @@
             background: #000;
             margin: 0 auto 20px auto;
             width: 100%;
-            aspect-ratio: 16/9; /* Forces correct shape */
+            aspect-ratio: 16/9;
             position: relative;
         }
 
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Ensures no black bars */
+            object-fit: cover;
             display: block;
         }
 
@@ -121,7 +124,7 @@
             border: 1px solid rgba(255,255,255,0.4);
         }
 
-        /* Success Screen */
+        /* --- SUCCESS SCREEN --- */
         #success-screen {
             display: none;
             position: absolute;
@@ -129,8 +132,16 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,1); /* Solid black background */
+            background: rgba(0,0,0,1);
             z-index: 500;
+        }
+
+        /* Wrapper for the YAY part */
+        #success-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
         }
 
         .success-text {
@@ -140,8 +151,52 @@
             animation: pop 1s ease forwards;
             text-align: center;
         }
+
+        /* --- FINAL MESSAGE --- */
+        #final-message-container {
+            display: none; /* Hidden initially */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            width: 90%;
+        }
+
+        .final-text-main {
+            font-family: 'Great Vibes', cursive;
+            font-size: 4rem;
+            color: #ffd700; /* Gold */
+            text-shadow: 0 0 20px #ff69b4;
+            margin: 0;
+            opacity: 0; /* Start invisible for animation */
+            animation: floatUp 1.5s ease forwards 0.2s;
+        }
+
+        .final-text-sub {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: #fff0f5;
+            text-shadow: 0 0 10px #ff69b4;
+            margin-top: 20px;
+            opacity: 0; /* Start invisible for animation */
+            animation: floatUp 1.5s ease forwards 1s; /* Delay starting */
+        }
+
         @keyframes pop {
             0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); }
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 0; transform: translateY(40px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Mobile text adjustments */
+        @media (max-width: 600px) {
+            .final-text-main { font-size: 3rem; }
+            .final-text-sub { font-size: 2rem; }
         }
     </style>
 </head>
@@ -161,9 +216,7 @@
         <div class="video-frame">
             <video id="trampVideo" src="lady_tramp.mp4" playsinline webkit-playsinline></video>
         </div>
-
         <h1>Would you be my valentine Wegy?</h1>
-
         <div class="buttons" id="btnContainer">
             <button id="yesBtn">Yes</button>
             <button id="noBtn">No</button>
@@ -171,10 +224,19 @@
     </div>
 
     <div id="success-screen">
-        <h1 class="success-text">YAAAYYYY!!!!</h1>
-        <div class="video-frame" style="width: 90%; max-width: 800px;">
-            <video id="aladdinVideo" src="aladdin.mp4" playsinline webkit-playsinline></video>
+        
+        <div id="success-content-wrapper">
+            <h1 class="success-text">YAAAYYYY!!!!</h1>
+            <div class="video-frame" style="width: 90%; max-width: 800px;">
+                <video id="aladdinVideo" src="aladdin.mp4" playsinline webkit-playsinline></video>
+            </div>
         </div>
+
+        <div id="final-message-container">
+            <h1 class="final-text-main">I LOVE YOU WEGY</h1>
+            <h2 class="final-text-sub">DON'T BE SAD ❤️</h2>
+        </div>
+
     </div>
 
     <script>
@@ -186,60 +248,61 @@
         const questionScreen = document.getElementById('question-screen');
         const successScreen = document.getElementById('success-screen');
         const aladdinVideo = document.getElementById('aladdinVideo');
+        const successContentWrapper = document.getElementById('success-content-wrapper');
+        const finalMessageContainer = document.getElementById('final-message-container');
 
-        // --- STEP 1: WAKE UP VIDEOS (Mobile Fix) ---
+        // --- STEP 1: WAKE UP VIDEOS ---
         startOverlay.addEventListener('click', () => {
-            // We play and immediately pause both videos.
-            // This "tricks" the iPhone into thinking the user has interacted with them.
+            // Trick mobile browsers into preparing videos
             trampVideo.play().then(() => {
                 trampVideo.pause();
                 trampVideo.currentTime = 0;
-            }).catch(() => console.log("Video auto-block handled"));
-
+            }).catch(() => {}); // Ignore errors here
+            
             aladdinVideo.load();
             
-            // Remove overlay
             startOverlay.style.opacity = '0';
             setTimeout(() => startOverlay.style.display = 'none', 500);
         });
 
-        // --- STEP 2: THE SEQUENCE LOGIC ---
+        // --- STEP 2: SEQUENCE LOGIC ---
         function startLoveSequence() {
-            // A. Hide the buttons so she just watches
+            // Lock UI
             btnContainer.style.opacity = '0';
             btnContainer.style.pointerEvents = 'none';
 
-            // B. Play Lady and the Tramp
-            trampVideo.muted = false; // Try sound
+            // Play First Video
+            trampVideo.muted = false;
             trampVideo.play().catch(() => {
-                // If sound is blocked, play muted as fallback
-                trampVideo.muted = true;
-                trampVideo.play();
+                 trampVideo.muted = true; trampVideo.play(); // Fallback muted
             });
 
-            // C. Listen for when the video ENDS
+            // When First Video Ends -> Go to Success Page
             trampVideo.onended = function() {
                 goToSuccessPage();
             };
-            
-            // D. Fallback: If video loops or gets stuck, force switch after 6 seconds
-            setTimeout(() => {
-                if (questionScreen.style.display !== 'none') {
-                    goToSuccessPage();
-                }
-            }, 6500);
+             // Fallback timeout just in case
+            setTimeout(() => { if (questionScreen.style.display !== 'none') goToSuccessPage(); }, 8000);
         }
 
         function goToSuccessPage() {
             questionScreen.style.display = 'none';
             successScreen.style.display = 'flex';
             
+            // Play Second Video
             aladdinVideo.currentTime = 0;
             aladdinVideo.muted = false;
             aladdinVideo.play().catch(() => {
-                aladdinVideo.muted = true;
-                aladdinVideo.play();
+                 aladdinVideo.muted = true; aladdinVideo.play(); // Fallback muted
             });
+
+            // --- NEW: When Second Video Ends -> Show Final Text ---
+            aladdinVideo.onended = function() {
+                // Hide the video part
+                successContentWrapper.style.display = 'none';
+                // Show the final text part
+                finalMessageContainer.style.display = 'flex';
+            };
         }
 
         // --- STEP 3: BUTTON ACTIONS ---
