@@ -20,7 +20,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            touch-action: none;
+            touch-action: manipulation; /* Improved touch handling */
         }
 
         /* Start Overlay */
@@ -92,6 +92,7 @@
             align-items: center;
             width: 100%;
             margin-top: 10px;
+            transition: opacity 0.5s ease; /* Smooth fade out */
         }
 
         button {
@@ -102,7 +103,7 @@
             cursor: pointer;
             font-family: 'Poppins', sans-serif;
             font-weight: 600;
-            transition: all 0.3s ease; /* Smooth transition for color swap */
+            transition: all 0.3s ease;
             -webkit-tap-highlight-color: transparent;
             z-index: 20;
             display: inline-block;
@@ -154,19 +155,15 @@
 
     <div class="container" id="question-screen">
         <div class="video-frame">
-            <video id="trampVideo" src="lady_tramp.mp4" muted playsinline webkit-playsinline preload="auto"></video>
+            <video id="trampVideo" src="lady_tramp.mp4" muted playsinline webkit-playsinline></video>
         </div>
 
-        <h1>Would you be my valentine Wegy?</h1>
+        <h1 id="mainTitle">Would you be my valentine Wegy?</h1>
 
-        <div class="buttons">
+        <div class="buttons" id="btnContainer">
             <button id="yesBtn">Yes</button>
             <button id="noBtn">No</button>
         </div>
-        
-        <p style="font-size: 0.8rem; opacity: 0.6; margin-top: 15px;">
-            (Drag your finger on the screen ✨)
-        </p>
     </div>
 
     <div id="success-screen">
@@ -180,89 +177,75 @@
         const trampVideo = document.getElementById('trampVideo');
         const yesBtn = document.getElementById('yesBtn');
         const noBtn = document.getElementById('noBtn');
+        const btnContainer = document.getElementById('btnContainer');
+        const mainTitle = document.getElementById('mainTitle');
         const startOverlay = document.getElementById('start-overlay');
         const questionScreen = document.getElementById('question-screen');
         const successScreen = document.getElementById('success-screen');
         const aladdinVideo = document.getElementById('aladdinVideo');
 
-        // CONFIG
-        const KISS_TIME = 5.0; 
-        const MAX_DISTANCE = 350;
+        // 1. INITIALIZE VIDEOS
+        // We pause Tramp at 0:00 initially
+        trampVideo.pause();
+        trampVideo.currentTime = 0;
 
-        // 1. TAP TO START
+        // 2. TAP TO START
         startOverlay.addEventListener('click', () => {
             startOverlay.style.opacity = '0';
             setTimeout(() => startOverlay.style.display = 'none', 500);
-            trampVideo.play().then(() => {
-                trampVideo.pause();
-                trampVideo.currentTime = 0;
-            });
+            
+            // "Warm up" the videos so they play instantly later
+            trampVideo.play().then(() => trampVideo.pause());
             aladdinVideo.load();
         });
 
-        // 2. VIDEO SCRUBBER
-        function handleInput(x, y) {
-            const rect = yesBtn.getBoundingClientRect();
-            const btnX = rect.left + rect.width / 2;
-            const btnY = rect.top + rect.height / 2;
-            const dist = Math.hypot(x - btnX, y - btnY);
+        // 3. SEQUENCE FUNCTION
+        function playSequence() {
+            // A. Hide Buttons immediately so she can't click again
+            btnContainer.style.opacity = '0';
+            btnContainer.style.pointerEvents = 'none'; // Disable clicks
+            
+            // B. Change text to build anticipation (Optional cute touch)
+            mainTitle.innerText = "Watch closely... ❤️";
 
-            let progress = 1 - (dist / MAX_DISTANCE);
-            if (progress < 0) progress = 0;
-            if (progress > 1) progress = 1;
+            // C. Play Lady and the Tramp
+            trampVideo.currentTime = 0;
+            trampVideo.muted = false; // Unmute if the video has sound
+            trampVideo.play();
 
-            if (window.innerWidth < 600) {
-                progress = Math.min(progress * 1.4, 1);
-            }
-
-            const targetTime = progress * KISS_TIME;
-
-            if (!trampVideo.seeking) {
-                 if (trampVideo.fastSeek) {
-                     trampVideo.fastSeek(targetTime);
-                 } else if (Math.abs(trampVideo.currentTime - targetTime) > 0.1) {
-                        trampVideo.currentTime = targetTime;
-                 }
-            }
+            // D. When Tramp video finishes (approx 5-6 seconds)
+            // We listen for the 'ended' event, OR we force it after 5.5 seconds
+            // The safest way is a timeout slightly longer than the clip
+            
+            setTimeout(() => {
+                // E. Switch Screens
+                questionScreen.style.display = 'none';
+                successScreen.style.display = 'flex';
+                
+                // F. Play Aladdin
+                aladdinVideo.currentTime = 0;
+                aladdinVideo.muted = false;
+                aladdinVideo.play();
+            }, 5500); // 5500 ms = 5.5 seconds. Adjust this if your clip is shorter/longer!
         }
 
-        document.addEventListener('touchmove', (e) => {
-            e.preventDefault(); 
-            const touch = e.touches[0];
-            handleInput(touch.clientX, touch.clientY);
-        }, { passive: false });
+        // 4. BUTTON LISTENERS
+        yesBtn.addEventListener('click', playSequence);
 
-        document.addEventListener('mousemove', (e) => {
-            handleInput(e.clientX, e.clientY);
-        });
-
-        // 3. SUCCESS FUNCTION
-        function triggerSuccess() {
-            questionScreen.style.display = 'none';
-            successScreen.style.display = 'flex';
-            aladdinVideo.currentTime = 0;
-            aladdinVideo.muted = false;
-            aladdinVideo.play();
-        }
-
-        // 4. YES BUTTON
-        yesBtn.addEventListener('click', triggerSuccess);
-
-        // 5. NO BUTTON (SWITCH TO YES LOGIC)
         noBtn.addEventListener('click', function() {
             if (this.innerText === "No") {
-                // Change text
+                // Transform into Yes Button
                 this.innerText = "Yes";
-                // Change style to match the Yes button
                 this.style.background = "linear-gradient(45deg, #ff6b6b, #ff8e8e)";
                 this.style.color = "white";
                 this.style.boxShadow = "0 5px 15px rgba(255, 107, 107, 0.4)";
                 this.style.border = "none";
             } else {
-                // If clicked again (when it says Yes), trigger success
-                triggerSuccess();
+                // If clicked again (as Yes), run the sequence
+                playSequence();
             }
         });
+
     </script>
 </body>
 </html>
