@@ -24,7 +24,7 @@
             touch-action: manipulation;
         }
 
-        /* --- START SCREEN OVERLAY --- */
+        /* --- START SCREEN --- */
         #start-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -52,7 +52,7 @@
                 40vw 80vh 1px white, 60vw 10vh 2px white;
         }
 
-        /* --- MAIN LAYOUT --- */
+        /* --- CONTAINER --- */
         .container {
             text-align: center;
             position: relative;
@@ -136,7 +136,6 @@
             z-index: 500;
         }
 
-        /* Wrapper for the YAY part */
         #success-content-wrapper {
             display: flex;
             flex-direction: column;
@@ -152,51 +151,46 @@
             text-align: center;
         }
 
-        /* --- FINAL MESSAGE --- */
+        /* --- FINAL MESSAGE STYLING --- */
         #final-message-container {
-            display: none; /* Hidden initially */
+            display: none; /* Starts hidden */
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
             height: 100%;
-            width: 90%;
+            width: 100%;
+            background: radial-gradient(circle, #2b102f 0%, #000000 100%);
         }
 
         .final-text-main {
-            font-family: 'Great Vibes', cursive;
+            font-family: 'Great Vibes', cursive; /* Disney Font */
             font-size: 4rem;
             color: #ffd700; /* Gold */
-            text-shadow: 0 0 20px #ff69b4;
+            text-shadow: 0 0 20px #ff69b4, 0 0 40px #ff1493;
             margin: 0;
-            opacity: 0; /* Start invisible for animation */
+            opacity: 0;
             animation: floatUp 1.5s ease forwards 0.2s;
+            padding: 0 20px;
+            line-height: 1.2;
         }
 
         .final-text-sub {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-            font-size: 2.5rem;
-            color: #fff0f5;
-            text-shadow: 0 0 10px #ff69b4;
+            font-family: 'Great Vibes', cursive; /* Disney Font */
+            font-size: 3rem;
+            color: #ffffff;
+            text-shadow: 0 0 15px #87ceeb; /* Light blue glow */
             margin-top: 20px;
-            opacity: 0; /* Start invisible for animation */
-            animation: floatUp 1.5s ease forwards 1s; /* Delay starting */
+            opacity: 0;
+            animation: floatUp 1.5s ease forwards 1.2s; /* Delays appearance */
         }
 
-        @keyframes pop {
-            0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); }
-        }
+        @keyframes pop { 0% { transform: scale(0); } 80% { transform: scale(1.2); } 100% { transform: scale(1); } }
+        @keyframes floatUp { 0% { opacity: 0; transform: translateY(40px); } 100% { opacity: 1; transform: translateY(0); } }
 
-        @keyframes floatUp {
-            0% { opacity: 0; transform: translateY(40px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Mobile text adjustments */
         @media (max-width: 600px) {
-            .final-text-main { font-size: 3rem; }
-            .final-text-sub { font-size: 2rem; }
+            .final-text-main { font-size: 2.8rem; }
+            .final-text-sub { font-size: 2.2rem; }
         }
     </style>
 </head>
@@ -251,73 +245,60 @@
         const successContentWrapper = document.getElementById('success-content-wrapper');
         const finalMessageContainer = document.getElementById('final-message-container');
 
-        // --- STEP 1: WAKE UP VIDEOS ---
+        // 1. WAKE UP VIDEOS
         startOverlay.addEventListener('click', () => {
-            // Trick mobile browsers into preparing videos
             trampVideo.play().then(() => {
                 trampVideo.pause();
                 trampVideo.currentTime = 0;
-            }).catch(() => {}); // Ignore errors here
-            
+            }).catch(() => {});
             aladdinVideo.load();
-            
             startOverlay.style.opacity = '0';
             setTimeout(() => startOverlay.style.display = 'none', 500);
         });
 
-        // --- STEP 2: SEQUENCE LOGIC ---
+        // 2. SEQUENCE LOGIC
         function startLoveSequence() {
-            // Lock UI
             btnContainer.style.opacity = '0';
             btnContainer.style.pointerEvents = 'none';
 
-            // Play First Video
             trampVideo.muted = false;
-            trampVideo.play().catch(() => {
-                 trampVideo.muted = true; trampVideo.play(); // Fallback muted
-            });
+            trampVideo.play().catch(() => { trampVideo.muted = true; trampVideo.play(); });
 
-            // When First Video Ends -> Go to Success Page
-            trampVideo.onended = function() {
-                goToSuccessPage();
-            };
-             // Fallback timeout just in case
-            setTimeout(() => { if (questionScreen.style.display !== 'none') goToSuccessPage(); }, 8000);
+            trampVideo.onended = function() { goToSuccessPage(); };
+            
+            // Safety timeout in case video stalls
+            setTimeout(() => { 
+                if (questionScreen.style.display !== 'none') goToSuccessPage(); 
+            }, 8000); 
         }
 
         function goToSuccessPage() {
             questionScreen.style.display = 'none';
             successScreen.style.display = 'flex';
             
-            // Play Second Video
             aladdinVideo.currentTime = 0;
             aladdinVideo.muted = false;
-            aladdinVideo.play().catch(() => {
-                 aladdinVideo.muted = true; aladdinVideo.play(); // Fallback muted
-            });
+            aladdinVideo.play().catch(() => { aladdinVideo.muted = true; aladdinVideo.play(); });
 
-            // --- NEW: When Second Video Ends -> Show Final Text ---
+            // *** HERE IS THE LOGIC FOR THE TEXT ***
+            // When Aladdin video ends, hide video and show text
             aladdinVideo.onended = function() {
-                // Hide the video part
-                successContentWrapper.style.display = 'none';
-                // Show the final text part
-                finalMessageContainer.style.display = 'flex';
+                successContentWrapper.style.display = 'none'; // Hide Video
+                finalMessageContainer.style.display = 'flex'; // Show Text
             };
         }
 
-        // --- STEP 3: BUTTON ACTIONS ---
+        // 3. BUTTONS
         yesBtn.addEventListener('click', startLoveSequence);
 
         noBtn.addEventListener('click', function() {
             if (this.innerText === "No") {
-                // Turn into YES
                 this.innerText = "Yes";
                 this.style.background = "linear-gradient(45deg, #ff6b6b, #ff8e8e)";
                 this.style.color = "white";
                 this.style.boxShadow = "0 5px 15px rgba(255, 107, 107, 0.4)";
                 this.style.border = "none";
             } else {
-                // If pressed again, start sequence
                 startLoveSequence();
             }
         });
